@@ -7,7 +7,7 @@ module.exports = {
 
   getAllMovies: (req, res, next) => {
     Movie.find({ owner: req.user._id })
-      .populate('owner', 'name')
+      .select('-owner')
       .sort('-year country director nameRU')
       .then((result) => {
         res.status(Status.OK).send(result);
