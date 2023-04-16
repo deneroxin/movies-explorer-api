@@ -6,7 +6,7 @@ const {
 module.exports = {
 
   getAllMovies: (req, res, next) => {
-    Movie.find({})
+    Movie.find({ owner: req.user._id })
       .populate('owner', 'name')
       .sort('-year country director nameRU')
       .then((result) => {
@@ -16,18 +16,16 @@ module.exports = {
   },
 
   createMovie: (req, res, next) => {
-    req.body.owner = req.user._id;
-    Movie.create(req.body)
-      .then((createdCard) => {
-        res.status(Status.CREATED).send(createdCard);
+    Movie.find({ owner: req.user._id, movieId: req.body.movieId }).lean()
+      .then((result) => {
+        if (result && result.length) throw new ConflictError(Msg.MOVIE_EXISTS);
+        req.body.owner = req.user._id;
+        return Movie.create(req.body);
       })
-      .catch((err) => {
-        if (err.code === 11000) {
-          next(new ConflictError(Msg.MOVIE_EXISTS));
-        } else {
-          next(err);
-        }
-      });
+      .then((createdMovie) => {
+        res.status(Status.CREATED).send(createdMovie);
+      })
+      .catch(next);
   },
 
   deleteMovie: (req, res, next) => {
@@ -38,11 +36,10 @@ module.exports = {
         if (foundMovie.get('owner', String) !== req.user._id) {
           throw new ForbiddenError(Msg.NOT_ENOUGH_RIGHTS);
         }
-        Movie.findByIdAndRemove(id)
-          .then((oldMovie) => {
-            res.status(Status.OK).send(oldMovie);
-          })
-          .catch(next);
+        return Movie.findByIdAndRemove(id).lean();
+      })
+      .then((oldMovie) => {
+        res.status(Status.OK).send(oldMovie);
       })
       .catch(next);
   },

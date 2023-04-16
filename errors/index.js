@@ -25,6 +25,7 @@ const Msg = {
   MOVIE_EXISTS: 'Такой фильм уже есть в коллекции',
   MOVIE_NOT_FOUND: 'Фильм не найден',
   NOT_ENOUGH_RIGHTS: 'У вас недостаточно прав для этого действия',
+  SIGNOUT: 'Пользователь вышел из системы',
 };
 
 class GeneralError extends Error {
@@ -34,9 +35,18 @@ class GeneralError extends Error {
   }
 }
 
+function generalErrorHandler(err, req, res, next) {
+  const { statusCode = InternalServerError.code } = err;
+  const message = (statusCode === InternalServerError.code)
+    ? Msg.INTERNAL_ERROR : err.message;
+  res.status(statusCode).send({ message });
+  next();
+}
+
 module.exports = {
   Status,
   Msg,
+  generalErrorHandler,
   GeneralError,
   BadRequestError,
   UnauthorizedError,

@@ -1,18 +1,13 @@
 const router = require('express').Router();
-const { celebrate, Joi } = require('celebrate');
 const { authorizeAdmin } = require('../middlewares/auth');
 const {
   getAllUsers, getUserById, getCurrentUser, updateUserData,
 } = require('../controllers/users');
+const validation = require('../middlewares/validation');
 
 router.get('/me', getCurrentUser);
 
-router.patch('/me', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().email().required(),
-    name: Joi.string().min(2).max(30).required(),
-  }),
-}), updateUserData);
+router.patch('/me', validation.updateUserData, updateUserData);
 
 // To be allowed to make the following requests,
 // you should send a secret-key in the 'Admin-key' header.
@@ -21,10 +16,6 @@ router.patch('/me', celebrate({
 
 router.get('/', authorizeAdmin, getAllUsers);
 
-router.get('/:userId', authorizeAdmin, celebrate({
-  params: Joi.object().keys({
-    userId: Joi.string().hex().length(24).required(),
-  }),
-}), getUserById);
+router.get('/:userId', authorizeAdmin, validation.getUserById, getUserById);
 
 module.exports = router;

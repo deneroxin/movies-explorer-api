@@ -6,12 +6,12 @@ const {
   Status, Msg, NotFoundError, ConflictError,
 } = require('../errors');
 
-function createToken(user) {
-  return jwt.sign(
-    { _id: user._id },
-    getSecretKey(),
-    { expiresIn: '7d' },
-  );
+function checkForConflict(err, next) {
+  if (err.code === 11000) {
+    next(new ConflictError(Msg.USER_EXISTS));
+  } else {
+    next(err);
+  }
 }
 
 module.exports = {
@@ -20,29 +20,30 @@ module.exports = {
     bcrypt.hash(req.body.password, 10)
       .then((hash) => User.create([{ ...req.body, password: hash }], { validateBeforeSave: true }))
       .then(([newlyCreatedUser]) => {
-        // Если регистрация успешна, возвращаем токен вместе с ответом,
-        // чтобы сразу авторизовать пользователя без дополнительных запросов.
-        const { password, ...user } = newlyCreatedUser.toObject();
-        const token = createToken(user);
-        res.status(Status.CREATED).send({ ...user, token });
+        res.status(Status.CREATED).send(newlyCreatedUser);
       })
-      .catch((err) => {
-        if (err.code === 11000) {
-          next(new ConflictError(Msg.USER_EXISTS));
-        } else {
-          next(err);
-        }
-      });
+      .catch((err) => checkForConflict(err, next));
   },
 
   login: (req, res, next) => {
     const { email, password } = req.body;
     User.findUserByCredentials(email, password)
       .then((user) => {
-        const token = createToken(user);
+        const token = jwt.sign(
+          { _id: user._id },
+          getSecretKey(),
+          { expiresIn: '7d' },
+        );
         res.status(Status.OK).send({ ...user, token });
       })
       .catch(next);
+  },
+
+  clearCookie: (req, res) => {
+    res.clearCookie('jwt', {
+      sameSite: 'none',
+      secure: true,
+    }).status(Msg.NO_CONTENT).send({ message: Msg.SIGNOUT });
   },
 
   getCurrentUser: (req, res, next) => {
@@ -63,7 +64,7 @@ module.exports = {
         if (!updatedUserData) throw new NotFoundError(Msg.YOU_ARENT_FOUND);
         res.status(Status.OK).send(updatedUserData);
       })
-      .catch(next);
+      .catch((err) => checkForConflict(err, next));
   },
 
   getAllUsers: (req, res, next) => {

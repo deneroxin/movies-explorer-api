@@ -53,10 +53,8 @@ const movieSchema = new mongoose.Schema({
     required: true,
   },
   movieId: {
-    type: String,
+    type: Number,
     required: true,
-    index: true,
-    unique: true,
   },
   nameRU: {
     type: String,
@@ -65,16 +63,6 @@ const movieSchema = new mongoose.Schema({
   nameEN: {
     type: String,
     required: true,
-  },
-}, {
-  statics: {
-    boundYear(value, helpers) {
-      const filmYear = parseInt(value, 10);
-      const thisYear = (new Date()).getFullYear();
-      if (filmYear > 1895 && filmYear <= thisYear) return value;
-      return helpers.error('any.invalid');
-    },
-    validUriKind: { scheme: [/(?:ht|f)tps?/] },
   },
 });
 
