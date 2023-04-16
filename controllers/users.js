@@ -43,7 +43,7 @@ module.exports = {
     res.clearCookie('jwt', {
       sameSite: 'none',
       secure: true,
-    }).status(Msg.NO_CONTENT).send({ message: Msg.SIGNOUT });
+    }).status(Status.NO_CONTENT).send({ message: Msg.SIGNOUT });
   },
 
   getCurrentUser: (req, res, next) => {

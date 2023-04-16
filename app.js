@@ -37,6 +37,6 @@ app.use(errors());
 
 app.use(generalErrorHandler);
 
-mongoose.connect(config.databaseLocation);
+mongoose.connect(config.databaseAddress);
 
 app.listen(config.port);
