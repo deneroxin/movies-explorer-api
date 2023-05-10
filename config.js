@@ -9,7 +9,7 @@ module.exports = {
 
   allowedCors: [
     'https://diploma.deneroxin.nomoredomains.monster',
-    'http://localhost:3001',
+    'http://localhost:3000',
   ],
 
   allowedMethods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
